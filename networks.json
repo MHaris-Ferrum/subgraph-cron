@@ -1,0 +1,8 @@
+{
+  "arbitrum-one": {
+    "ERC1967Proxy": {
+      "address": "0x0f7afaaea1618b46b8c2c6e04250bad785be8e47",
+      "startBlock": 244851289
+    }
+  }
+}
