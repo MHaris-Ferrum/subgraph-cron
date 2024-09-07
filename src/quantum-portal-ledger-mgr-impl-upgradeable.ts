@@ -23,12 +23,21 @@ import {
   RemoteTransactionRegistered,
   Upgraded,
 } from "../generated/schema";
+import {
+  handleBlock,
+  handleTransaction,
+  handleTransactionReceipt,
+} from "./mapping";
 
 export function handleAdminSet(event: AdminSetEvent): void {
   let entity = new AdminSet(
     event.transaction.hash.concatI32(event.logIndex.toI32())
   );
   entity.admin = event.params.admin;
+
+  handleBlock(event);
+  handleTransaction(event);
+  handleTransactionReceipt(event);
 
   entity.blockNumber = event.block.number;
   entity.blockTimestamp = event.block.timestamp;
@@ -44,6 +53,10 @@ export function handleFinalizedBlock(event: FinalizedBlockEvent): void {
   entity.remoteChainId = event.params.remoteChainId;
   entity.blockNonce = event.params.blockNonce;
   entity.timestamp = event.params.timestamp;
+
+  handleBlock(event);
+  handleTransaction(event);
+  handleTransactionReceipt(event);
 
   entity.blockNumber = event.block.number;
   entity.blockTimestamp = event.block.timestamp;
@@ -61,6 +74,10 @@ export function handleFinalizedInvalidBlock(
   entity.remoteChainId = event.params.remoteChainId;
   entity.blockNonce = event.params.blockNonce;
   entity.timestamp = event.params.timestamp;
+
+  handleBlock(event);
+  handleTransaction(event);
+  handleTransactionReceipt(event);
 
   entity.blockNumber = event.block.number;
   entity.blockTimestamp = event.block.timestamp;
@@ -80,6 +97,10 @@ export function handleFinalizedSnapshot(event: FinalizedSnapshotEvent): void {
     (finalizer: Address) => finalizer as Bytes
   );
 
+  handleBlock(event);
+  handleTransaction(event);
+  handleTransactionReceipt(event);
+
   entity.blockNumber = event.block.number;
   entity.blockTimestamp = event.block.timestamp;
   entity.transactionHash = event.transaction.hash;
@@ -92,6 +113,10 @@ export function handleInitialized(event: InitializedEvent): void {
     event.transaction.hash.concatI32(event.logIndex.toI32())
   );
   entity.version = event.params.version;
+
+  handleBlock(event);
+  handleTransaction(event);
+  handleTransactionReceipt(event);
 
   entity.blockNumber = event.block.number;
   entity.blockTimestamp = event.block.timestamp;
@@ -107,6 +132,10 @@ export function handleLocalBlockCreated(event: LocalBlockCreatedEvent): void {
   entity.remoteChainId = event.params.remoteChainId;
   entity.nonce = event.params.nonce;
   entity.timestamp = event.params.timestamp;
+
+  handleBlock(event);
+  handleTransaction(event);
+  handleTransactionReceipt(event);
 
   entity.blockNumber = event.block.number;
   entity.blockTimestamp = event.block.timestamp;
@@ -127,6 +156,10 @@ export function handleMinedBlockCreated(event: MinedBlockCreatedEvent): void {
   entity.blockMetadata_nonce = event.params.blockMetadata.nonce;
   entity.blockMetadata_timestamp = event.params.blockMetadata.timestamp;
 
+  handleBlock(event);
+  handleTransaction(event);
+  handleTransactionReceipt(event);
+
   entity.blockNumber = event.block.number;
   entity.blockTimestamp = event.block.timestamp;
   entity.transactionHash = event.transaction.hash;
@@ -142,6 +175,10 @@ export function handleOwnershipTransferred(
   );
   entity.previousOwner = event.params.previousOwner;
   entity.newOwner = event.params.newOwner;
+
+  handleBlock(event);
+  handleTransaction(event);
+  handleTransactionReceipt(event);
 
   entity.blockNumber = event.block.number;
   entity.blockTimestamp = event.block.timestamp;
@@ -166,6 +203,10 @@ export function handleRemoteTransactionRegistered(
   entity.gas = event.params.gas;
   entity.fixedFee = event.params.fixedFee;
 
+  handleBlock(event);
+  handleTransaction(event);
+  handleTransactionReceipt(event);
+
   entity.blockNumber = event.block.number;
   entity.blockTimestamp = event.block.timestamp;
   entity.transactionHash = event.transaction.hash;
@@ -178,6 +219,10 @@ export function handleUpgraded(event: UpgradedEvent): void {
     event.transaction.hash.concatI32(event.logIndex.toI32())
   );
   entity.implementation = event.params.implementation;
+
+  handleBlock(event);
+  handleTransaction(event);
+  handleTransactionReceipt(event);
 
   entity.blockNumber = event.block.number;
   entity.blockTimestamp = event.block.timestamp;

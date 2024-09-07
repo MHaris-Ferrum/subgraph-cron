@@ -108,3 +108,59 @@ type QuantumPortalLedgerMgrImplUpgradeableUpgraded @entity(immutable: true) {
   blockTimestamp: BigInt!
   transactionHash: Bytes!
 }
+
+type Block @entity(immutable: true) {
+  id: String!
+  hash: Bytes!
+  parentHash: Bytes!
+  unclesHash: Bytes
+  author: Bytes!
+  stateRoot: Bytes
+  transactionsRoot: Bytes
+  receiptsRoot: Bytes
+  number: BigInt!
+  gasUsed: BigInt!
+  gasLimit: BigInt!
+  timestamp: BigInt!
+  difficulty: BigInt
+  totalDifficulty: BigInt
+  size: BigInt
+  baseFeePerGas: BigInt
+}
+
+type Transaction @entity {
+  id: Bytes! # Transaction hash (unique identifier)
+  hash: Bytes! # Transaction hash (same as id)
+  from: Bytes! # Sender address
+  to: Bytes # Receiver address (if any)
+  value: BigInt # Value sent with the transaction (in wei)
+  gasPrice: BigInt! # Gas price the sender is willing to pay
+  gasLimit: BigInt! # Maximum gas limit the sender is willing to use
+  nonce: BigInt! # Sender’s nonce for the transaction
+  inputData: Bytes! # Input data for contract calls or deployment
+  block: Block! # Link to the block entity
+  timestamp: BigInt! # Timestamp when the transaction was included
+  transactionReceipt: TransactionReceipt! @derivedFrom(field: "transaction") # Link to the receipt
+}
+
+type TransactionReceipt @entity {
+  id: ID! # Same as the transaction hash
+  status: BigInt # Transaction status: true for success, false for failure
+  transaction: Transaction! # Link to the transaction entity
+  blockHash: Bytes! # Block hash where the transaction was included
+  blockNumber: BigInt! # Block number where the transaction was included
+  gasUsed: BigInt # Total gas used by the transaction
+  cumulativeGasUsed: BigInt # Total gas used in the block up to this transaction
+  # logs: [Log] # Logs emitted by contracts during the transaction
+  contractAddress: Bytes # Contract address if it was a contract creation transaction
+  root: Bytes
+  logsBloom: Bytes
+}
+
+type Log @entity {
+  id: ID! # Log index within the transaction
+  transactionReceipt: TransactionReceipt! # Link to the transaction receipt entity
+  address: Bytes! # Address of the contract that emitted the log
+  data: Bytes! # Data associated with the log
+  topics: [Bytes!]! # Topics associated with the log (indexed event parameters)
+}
