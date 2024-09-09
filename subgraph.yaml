@@ -10,7 +10,7 @@ dataSources:
     source:
       address: "0x0f7afaaea1618b46b8c2c6e04250bad785be8e47"
       abi: QuantumPortalLedgerMgrImplUpgradeable
-      startBlock: 235919785
+      startBlock: 244851289
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7

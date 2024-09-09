@@ -144,23 +144,31 @@ type Transaction @entity {
 }
 
 type TransactionReceipt @entity {
-  id: ID! # Same as the transaction hash
+  id: Bytes! # Same as the transaction hash
   status: BigInt # Transaction status: true for success, false for failure
   transaction: Transaction! # Link to the transaction entity
   blockHash: Bytes! # Block hash where the transaction was included
   blockNumber: BigInt! # Block number where the transaction was included
   gasUsed: BigInt # Total gas used by the transaction
+  logs: [Log!]
   cumulativeGasUsed: BigInt # Total gas used in the block up to this transaction
-  # logs: [Log] # Logs emitted by contracts during the transaction
   contractAddress: Bytes # Contract address if it was a contract creation transaction
   root: Bytes
   logsBloom: Bytes
 }
 
 type Log @entity {
-  id: ID! # Log index within the transaction
+  id: Bytes! # Log index within the transaction
   transactionReceipt: TransactionReceipt! # Link to the transaction receipt entity
   address: Bytes! # Address of the contract that emitted the log
   data: Bytes! # Data associated with the log
   topics: [Bytes!]! # Topics associated with the log (indexed event parameters)
+  blockHash: Bytes
+  blockNumber: Bytes
+  transactionHash: Bytes
+  transactionIndex: BigInt
+  logIndex: BigInt
+  transactionLogIndex: BigInt
+  logType: String
+  removed: Boolean
 }
