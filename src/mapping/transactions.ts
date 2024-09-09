@@ -1,5 +1,6 @@
-import { Bytes, ethereum, log } from "@graphprotocol/graph-ts";
+import { Address, Bytes, ethereum, log } from "@graphprotocol/graph-ts";
 import { Log, Transaction, TransactionReceipt } from "../../generated/schema";
+import { handleAccount } from "./accounts";
 
 export function handleTransaction(event: ethereum.Event): Transaction {
   let txEntity = Transaction.load(event.transaction.hash);
@@ -10,8 +11,12 @@ export function handleTransaction(event: ethereum.Event): Transaction {
     txEntity.hash = event.transaction.hash;
     txEntity.block = event.block.number.toString();
     txEntity.timestamp = event.block.timestamp;
-    txEntity.from = event.transaction.from;
-    txEntity.to = event.transaction.to;
+    txEntity.from = handleAccount(event.transaction.from);
+    if (event.transaction.to !== null) {
+      txEntity.to = handleAccount(event.transaction.to as Address);
+    } else {
+      txEntity.to = null;
+    }
     txEntity.value = event.transaction.value;
     txEntity.gasPrice = event.transaction.gasPrice;
     txEntity.gasLimit = event.transaction.gasLimit;

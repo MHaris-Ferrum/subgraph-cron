@@ -131,8 +131,8 @@ type Block @entity(immutable: true) {
 type Transaction @entity {
   id: Bytes! # Transaction hash (unique identifier)
   hash: Bytes! # Transaction hash (same as id)
-  from: Bytes! # Sender address
-  to: Bytes # Receiver address (if any)
+  from: Account! # Sender address
+  to: Account # Receiver address (if any)
   value: BigInt # Value sent with the transaction (in wei)
   gasPrice: BigInt! # Gas price the sender is willing to pay
   gasLimit: BigInt! # Maximum gas limit the sender is willing to use
@@ -171,4 +171,12 @@ type Log @entity {
   transactionLogIndex: BigInt
   logType: String
   removed: Boolean
+}
+
+type Account @entity {
+  id: Bytes! # Account address (unique identifier)
+  balance: BigInt! # Account balance (in wei)
+  isContract: Boolean! # True if the account is a contract
+  # transactions: [Transaction!]! @derivedFrom(field: "from")
+  # transactionsReceived: [Transaction!]! @derivedFrom(field: "to")
 }
