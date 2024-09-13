@@ -5,6 +5,9 @@ import {
   ethereum,
   log,
   ByteArray,
+  BigInt,
+  ValueKind,
+  Value,
 } from "@graphprotocol/graph-ts";
 import {
   DecodedInput,
@@ -13,7 +16,7 @@ import {
   TransactionReceipt,
 } from "../../generated/schema";
 import { handleAccount } from "./accounts";
-import * as ABI from "../../abis/QuantumPortalLedgerMgrImplUpgradeable.json";
+import { ABI_FUNCTION_DEFINITIONS } from "../utils/constants";
 import { Method } from "../types/function";
 
 export function handleTransaction(event: ethereum.Event): Transaction {
@@ -105,82 +108,82 @@ export function handleTransactionLog(receiptLogs: ethereum.Log[]): Bytes[] {
 // };
 
 const decodeTxInputData = (tx: ethereum.Transaction): Bytes => {
-  let functions = getFunctionSelectors(); // First 4 bytes (8 hex chars)
-  let methodSelector = tx.input.toHexString().slice(0, 10);
+  let methodSelectors = getFunctionSelectors(); // First 4 bytes (8 hex chars)
+  let methodSignature = tx.input.toHexString().slice(0, 10);
   let method = tx.input.toHexString().slice(10, 74);
   let params = tx.input.toHexString().slice(74);
   let decodedInputData = DecodedInput.load(tx.hash);
 
-  log.info("Method: {} {} {}", [methodSelector, method, params]);
+  log.info("Method: {} {} {}", [methodSignature, method, params]);
 
-  for (let i = 0; i < functions.length; i++) {
+  for (let i = 0; i < methodSelectors.length; i++) {
     log.info("Comparing function signature: {} {} {} {}", [
-      methodSelector,
-      functions[i].methodName,
-      functions[i].methodSelector,
-      functions[i].methodSignature,
+      methodSignature,
+      methodSelectors[i].methodName,
+      methodSelectors[i].methodSelector,
+      methodSelectors[i].parameterTypes,
     ]);
 
-    if (functions[i].methodSelector == methodSelector) {
+    if (methodSelectors[i].methodSelector == methodSignature) {
       log.info(
         "method id matched: {} with selector: {}, input data: {} {} {}",
         [
-          methodSelector,
-          functions[i].methodSelector,
+          methodSignature,
+          methodSelectors[i].methodSelector,
           tx.input.toHexString(),
-          functions[i].parameterTypes,
-          functions[i].methodName,
+          methodSelectors[i].parameterTypes,
+          methodSelectors[i].methodName,
         ]
       );
       // let data = txInput.subarray(4); // Extract the rest of the input data
       log.info("Decoding input data: {} for function selector {}", [
         tx.input.toHexString().slice(10),
-        `(${functions[i].parameterTypes})`,
+        `(${methodSelectors[i].parameterTypes})`,
       ]);
       // Decode the parameters based on the function signature
-      let decoded = ethereum.decode(
-        `(${functions[i].parameterTypes})`,
-        Bytes.fromHexString(tx.input.toHexString().slice(10))
-      );
-      if (decoded !== null) {
-        logDecodedValues(
-          decoded,
-          functions[i].parameterTypes,
-          functions[i].methodName
-        );
-        // let tuple = decoded.toTuple();
-        // log.info("Tuple: {}", [tuple.toString()]);
-        // let param1 = tuple[0].toBigInt(); // uint256
-        // let param2 = tuple[1].toBigInt(); // uint256
-        // let param3 = tuple[2].toBigIntArray(); // uint256[]
-        // let param4 = tuple[3].toBytes(); // bytes32
-        // let param5 = tuple[4].toAddressArray(); // address[]
-        // let param6 = tuple[5].toBytes(); // bytes32
-        // let param7 = tuple[6].toBigInt(); // uint64
-        // let param8 = tuple[7].toBytes(); // bytes
+      // let decoded = ethereum.decode(
+      //   `(${methodSelectors[i].parameterTypes})`,
+      //   Bytes.fromHexString(tx.input.toHexString().slice(10))
+      // );
+      // if (decoded !== null) {
+      // logDecodedValues(
+      //   decoded,
+      //   methodSelectors[i].parameterTypes,
+      //   methodSelectors[i].methodName
+      // );
+      // let tuple = decoded.toTuple();
+      // log.info("Tuple: {}", [tuple.toString()]);
+      // let param1 = tuple[0].toBigInt(); // uint256
+      // let param2 = tuple[1].toBigInt(); // uint256
+      // let param3 = tuple[2].toBigIntArray(); // uint256[]
+      // let param4 = tuple[3].toBytes(); // bytes32
+      // let param5 = tuple[4].toAddressArray(); // address[]
+      // let param6 = tuple[5].toBytes(); // bytes32
+      // let param7 = tuple[6].toBigInt(); // uint64
+      // let param8 = tuple[7].toBytes(); // bytes
 
-        // // Log the decoded values
-        // log.info("Param1 (uint256): {}", [param1.toString()]);
-        // log.info("Param2 (uint256): {}", [param2.toString()]);
-        // log.info("Param3 (uint256[]): {}", [
-        //   param3.map<string>((value) => value.toString()).join(", "),
-        // ]);
-        // log.info("Param4 (bytes32): {}", [param4.toHexString()]);
-        // log.info("Param5 (address[]): {}", [
-        //   param5.map<string>((value) => value.toHexString()).join(", "),
-        // ]);
-        // log.info("Param6 (bytes32): {}", [param6.toHexString()]);
-        // log.info("Param7 (uint64): {}", [param7.toString()]);
-        // log.info("Param8 (bytes): {}", [param8.toHexString()]);
-      }
+      // // Log the decoded values
+      // log.info("Param1 (uint256): {}", [param1.toString()]);
+      // log.info("Param2 (uint256): {}", [param2.toString()]);
+      // log.info("Param3 (uint256[]): {}", [
+      //   param3.map<string>((value) => value.toString()).join(", "),
+      // ]);
+      // log.info("Param4 (bytes32): {}", [param4.toHexString()]);
+      // log.info("Param5 (address[]): {}", [
+      //   param5.map<string>((value) => value.toHexString()).join(", "),
+      // ]);
+      // log.info("Param6 (bytes32): {}", [param6.toHexString()]);
+      // log.info("Param7 (uint64): {}", [param7.toString()]);
+      // log.info("Param8 (bytes): {}", [param8.toHexString()]);
+      // }
 
       if (decodedInputData == null) {
         decodedInputData = new DecodedInput(tx.hash);
         decodedInputData.id = tx.hash;
-        decodedInputData.method = functions[i].methodName;
-        // decodedInputData.methodId = functions[i].methodId;
-        // decodedInputData.methodString = functions[i].methodString;
-        // decodedInputData.methodParams = functions[i].methodParamsString;
+        decodedInputData.method = methodSelectors[i].methodName;
+        // decodedInputData.methodId = functionSelectors[i].methodId;
+        // decodedInputData.methodString = functionSelectors[i].methodString;
+        // decodedInputData.methodParams = functionSelectors[i].methodParamsString;
         decodedInputData.save();
       }
       return decodedInputData.id;
@@ -189,7 +192,7 @@ const decodeTxInputData = (tx: ethereum.Transaction): Bytes => {
   if (decodedInputData == null) {
     decodedInputData = new DecodedInput(tx.hash);
     decodedInputData.id = tx.hash;
-    decodedInputData.method = methodSelector;
+    decodedInputData.method = methodSignature;
     decodedInputData.save();
     return decodedInputData.id;
   }
@@ -199,52 +202,28 @@ const decodeTxInputData = (tx: ethereum.Transaction): Bytes => {
 export function getFunctionSelectors(): Array<Method> {
   let functionSelectors: Array<Method> = [];
 
-  if (ABI != null) {
-    for (let i = 0; i < ABI.length; i++) {
-      // Only process items with type "function"
-      if (ABI[i].type == "function") {
-        let methodName = ABI[i].name;
-        let parameterTypes: string = "";
-
-        // Check if the function has inputs
-        if (ABI[i].inputs && ABI[i].inputs.length > 0) {
-          parameterTypes = ABI[i].inputs
-            .map((input) => input.internalType)
-            .join(",");
-        }
-
-        // Construct method signature
-        let methodSignature = ABI[i].name + "(" + parameterTypes + ")";
-
-        // Hash the method signature to get the method selector
-        let byteArray = ByteArray.fromUTF8(methodSignature);
-        let hash = crypto.keccak256(byteArray);
-        let methodSelector = hash.toHexString().slice(0, 10); // First 4 bytes (8 hex characters)
-
-        // Push the Method object to the functionSelectors array
-        functionSelectors.push(
-          new Method(
-            methodName!,
-            parameterTypes,
-            methodSignature,
-            methodSelector
-          )
-        );
-
-        // Log the information (optional)
-        log.info("Function selector for {}: {} {} {}", [
-          methodName!,
-          parameterTypes,
-          methodSignature,
-          methodSelector,
-        ]);
-      }
-    }
-    return functionSelectors;
-  } else {
-    log.warning("ABI is null", []);
-    return [];
+  for (let i = 0; i < ABI_FUNCTION_DEFINITIONS.length; i++) {
+    let methodSignature = ABI_FUNCTION_DEFINITIONS[i];
+    let byteArray = ByteArray.fromUTF8(methodSignature);
+    let hash = crypto.keccak256(byteArray);
+    let methodSelector = hash.toHexString().slice(0, 10); // Extract the first 4 bytes (8 hex chars)
+    functionSelectors.push(
+      new Method(
+        methodSignature.split("(")[0],
+        methodSignature.split("(")[1].split(")")[0],
+        methodSignature,
+        methodSelector
+      )
+    );
+    log.info("Function selector for {}: {} {} {}", [
+      methodSignature.split("(")[0],
+      methodSignature.split("(")[1].split(")")[0],
+      methodSignature,
+      methodSelector,
+    ]);
   }
+
+  return functionSelectors;
 }
 
 function logDecodedValues(
