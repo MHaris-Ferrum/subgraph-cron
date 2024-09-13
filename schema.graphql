@@ -138,6 +138,7 @@ type Transaction @entity {
   gasLimit: BigInt! # Maximum gas limit the sender is willing to use
   nonce: BigInt! # Sender’s nonce for the transaction
   inputData: Bytes! # Input data for contract calls or deployment
+  decodedInput: DecodedInput! # Decoded input data
   block: Block! # Link to the block entity
   timestamp: BigInt! # Timestamp when the transaction was included
   transactionReceipt: TransactionReceipt! @derivedFrom(field: "transaction") # Link to the receipt
@@ -179,4 +180,10 @@ type Account @entity {
   isContract: Boolean! # True if the account is a contract
   # transactions: [Transaction!]! @derivedFrom(field: "from")
   # transactionsReceived: [Transaction!]! @derivedFrom(field: "to")
+}
+
+type DecodedInput @entity {
+  id: Bytes! # Transaction hash
+  method: String! # Method name
+  # parameters: [DecodedParameter!]! # Method parameters
 }

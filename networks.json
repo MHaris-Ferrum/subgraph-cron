@@ -1,8 +1,8 @@
 {
   "arbitrum-one": {
     "ERC1967Proxy": {
-      "address": "0x0f7afaaea1618b46b8c2c6e04250bad785be8e47",
-      "startBlock": 244851289
+      "address": "0x3e9316b40Bc5e676521B1DA04F4a8dF342E76FcB",
+      "startBlock": 252403272
     },
     "QuantumPortalLedgerMgrImplUpgradeable": {
       "address": "0x9ac2e992d85d5711210b0714f126e9495a89e883"
@@ -10,8 +10,8 @@
   },
   "bsc": {
     "ERC1967Proxy": {
-      "address": "0x0f7afaaea1618b46b8c2c6e04250bad785be8e47",
-      "startBlock": 244851289
+      "address": "0x3e9316b40Bc5e676521B1DA04F4a8dF342E76FcB",
+      "startBlock": 252403272
     },
     "QuantumPortalLedgerMgrImplUpgradeable": {
       "address": "0x9ac2e992d85d5711210b0714f126e9495a89e883"
@@ -19,8 +19,8 @@
   },
   "base": {
     "ERC1967Proxy": {
-      "address": "0x0f7afaaea1618b46b8c2c6e04250bad785be8e47",
-      "startBlock": 244851289
+      "address": "0x3e9316b40Bc5e676521B1DA04F4a8dF342E76FcB",
+      "startBlock": 252403272
     },
     "QuantumPortalLedgerMgrImplUpgradeable": {
       "address": "0x9ac2e992d85d5711210b0714f126e9495a89e883"

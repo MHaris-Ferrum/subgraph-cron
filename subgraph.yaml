@@ -8,9 +8,9 @@ dataSources:
     name: QuantumPortalLedgerMgrImplUpgradeable
     network: arbitrum-one
     source:
-      address: "0x0f7afaaea1618b46b8c2c6e04250bad785be8e47"
+      address: "0x3e9316b40Bc5e676521B1DA04F4a8dF342E76FcB"
       abi: QuantumPortalLedgerMgrImplUpgradeable
-      startBlock: 244851289
+      startBlock: 252403272
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
