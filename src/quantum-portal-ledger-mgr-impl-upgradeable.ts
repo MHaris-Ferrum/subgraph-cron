@@ -94,7 +94,8 @@ export function handleFinalizedSnapshot(event: FinalizedSnapshotEvent): void {
   entity.startBlockNonce = event.params.startBlockNonce;
   entity.endBlockNonce = event.params.endBlockNonce;
   entity.finalizers = event.params.finalizers.map<Bytes>(
-    (finalizer: Address) => finalizer as Bytes
+    (finalizer: Address) =>
+      Bytes.fromHexString(finalizer.toHexString()) as Bytes
   );
 
   handleBlock(event);

@@ -185,5 +185,11 @@ type Account @entity {
 type DecodedInput @entity {
   id: Bytes! # Transaction hash
   method: String! # Method name
-  # parameters: [DecodedParameter!]! # Method parameters
+  parameters: [String!]
+  values: [String!] # Method parameters
 }
+
+# type Parameters @entity {
+#   id: Bytes!
+#   metadata: String! # Store JSON-like key-value data as a string
+# }

@@ -8,6 +8,10 @@ import {
   BigInt,
   ValueKind,
   Value,
+  json,
+  JSONValueKind,
+  TypedMap,
+  JSONValue,
 } from "@graphprotocol/graph-ts";
 import {
   DecodedInput,
@@ -16,8 +20,9 @@ import {
   TransactionReceipt,
 } from "../../generated/schema";
 import { handleAccount } from "./accounts";
-import { ABI_FUNCTION_DEFINITIONS } from "../utils/constants";
+import { ABI } from "../utils/constants";
 import { Method } from "../types/function";
+import { ABIParameter } from "../types/abi";
 
 export function handleTransaction(event: ethereum.Event): Transaction {
   let txEntity = Transaction.load(event.transaction.hash);
@@ -99,20 +104,13 @@ export function handleTransactionLog(receiptLogs: ethereum.Log[]): Bytes[] {
   return Logs;
 }
 
-// const decodeTxInputData = (tx: ethereum.Transaction) => {
-//   let data = tx.input;
-//   let signature = data.slice(0, 10);
-//   let method = data.slice(10, 74);
-//   let params = data.slice(74);
-//   return { signature, method, params };
-// };
-
 const decodeTxInputData = (tx: ethereum.Transaction): Bytes => {
   let methodSelectors = getFunctionSelectors(); // First 4 bytes (8 hex chars)
   let methodSignature = tx.input.toHexString().slice(0, 10);
   let method = tx.input.toHexString().slice(10, 74);
   let params = tx.input.toHexString().slice(74);
   let decodedInputData = DecodedInput.load(tx.hash);
+  let input = tx.input.toHexString().slice(10);
 
   log.info("Method: {} {} {}", [methodSignature, method, params]);
 
@@ -121,7 +119,9 @@ const decodeTxInputData = (tx: ethereum.Transaction): Bytes => {
       methodSignature,
       methodSelectors[i].methodName,
       methodSelectors[i].methodSelector,
-      methodSelectors[i].parameterTypes,
+      methodSelectors[i].parameters
+        .map<string>((param) => param.type)
+        .join(","),
     ]);
 
     if (methodSelectors[i].methodSelector == methodSignature) {
@@ -130,60 +130,64 @@ const decodeTxInputData = (tx: ethereum.Transaction): Bytes => {
         [
           methodSignature,
           methodSelectors[i].methodSelector,
-          tx.input.toHexString(),
-          methodSelectors[i].parameterTypes,
+          input,
+          methodSelectors[i].parameters
+            .map<string>((param) => param.type)
+            .join(","),
           methodSelectors[i].methodName,
         ]
       );
+      if (
+        methodSelectors[i].parameters
+          .map<string>((param) => param.type)
+          .includes("uint256[]") ||
+        methodSelectors[i].parameters
+          .map<string>((param) => param.type)
+          .includes("address[]") ||
+        methodSelectors[i].parameters
+          .map<string>((param) => param.type)
+          .includes("bytes") ||
+        methodSelectors[i].parameters
+          .map<string>((param) => param.type)
+          .includes("bytes[]") ||
+        methodSelectors[i].parameters
+          .map<string>((param) => param.type)
+          .includes("bytes32[]")
+      ) {
+        log.info("dynamic data found: {}", [
+          methodSelectors[i].parameters
+            .map<string>((param) => param.type)
+            .join(","),
+        ]);
+        input =
+          "0000000000000000000000000000000000000000000000000000000000000020" +
+          input;
+      }
       // let data = txInput.subarray(4); // Extract the rest of the input data
       log.info("Decoding input data: {} for function selector {}", [
-        tx.input.toHexString().slice(10),
-        `(${methodSelectors[i].parameterTypes})`,
+        `(${methodSelectors[i].parameters.map<string>((param) => param.type)})`,
+        input,
       ]);
+      let params = methodSelectors[i].parameters.map<string>(
+        (param) => param.name
+      );
+      let values: string[] = [];
       // Decode the parameters based on the function signature
-      // let decoded = ethereum.decode(
-      //   `(${methodSelectors[i].parameterTypes})`,
-      //   Bytes.fromHexString(tx.input.toHexString().slice(10))
-      // );
-      // if (decoded !== null) {
-      // logDecodedValues(
-      //   decoded,
-      //   methodSelectors[i].parameterTypes,
-      //   methodSelectors[i].methodName
-      // );
-      // let tuple = decoded.toTuple();
-      // log.info("Tuple: {}", [tuple.toString()]);
-      // let param1 = tuple[0].toBigInt(); // uint256
-      // let param2 = tuple[1].toBigInt(); // uint256
-      // let param3 = tuple[2].toBigIntArray(); // uint256[]
-      // let param4 = tuple[3].toBytes(); // bytes32
-      // let param5 = tuple[4].toAddressArray(); // address[]
-      // let param6 = tuple[5].toBytes(); // bytes32
-      // let param7 = tuple[6].toBigInt(); // uint64
-      // let param8 = tuple[7].toBytes(); // bytes
-
-      // // Log the decoded values
-      // log.info("Param1 (uint256): {}", [param1.toString()]);
-      // log.info("Param2 (uint256): {}", [param2.toString()]);
-      // log.info("Param3 (uint256[]): {}", [
-      //   param3.map<string>((value) => value.toString()).join(", "),
-      // ]);
-      // log.info("Param4 (bytes32): {}", [param4.toHexString()]);
-      // log.info("Param5 (address[]): {}", [
-      //   param5.map<string>((value) => value.toHexString()).join(", "),
-      // ]);
-      // log.info("Param6 (bytes32): {}", [param6.toHexString()]);
-      // log.info("Param7 (uint64): {}", [param7.toString()]);
-      // log.info("Param8 (bytes): {}", [param8.toHexString()]);
-      // }
+      let decoded = ethereum.decode(
+        `(${methodSelectors[i].parameters.map<string>((param) => param.type)})`,
+        Bytes.fromHexString(input)
+      );
+      if (decoded !== null) {
+        values = logDecodedValues(decoded, methodSelectors[i], tx);
+      }
 
       if (decodedInputData == null) {
         decodedInputData = new DecodedInput(tx.hash);
         decodedInputData.id = tx.hash;
         decodedInputData.method = methodSelectors[i].methodName;
-        // decodedInputData.methodId = functionSelectors[i].methodId;
-        // decodedInputData.methodString = functionSelectors[i].methodString;
-        // decodedInputData.methodParams = functionSelectors[i].methodParamsString;
+        decodedInputData.parameters = params;
+        decodedInputData.values = values;
+        // decodedInputData.parameters = tx.hash;
         decodedInputData.save();
       }
       return decodedInputData.id;
@@ -202,15 +206,21 @@ const decodeTxInputData = (tx: ethereum.Transaction): Bytes => {
 export function getFunctionSelectors(): Array<Method> {
   let functionSelectors: Array<Method> = [];
 
-  for (let i = 0; i < ABI_FUNCTION_DEFINITIONS.length; i++) {
-    let methodSignature = ABI_FUNCTION_DEFINITIONS[i];
+  for (let i = 0; i < ABI.length; i++) {
+    let methodSignature =
+      ABI[i].name +
+      "(" +
+      ABI[i].parameters
+        .map<string>((param: ABIParameter) => param.type)
+        .join(",") +
+      ")";
     let byteArray = ByteArray.fromUTF8(methodSignature);
     let hash = crypto.keccak256(byteArray);
     let methodSelector = hash.toHexString().slice(0, 10); // Extract the first 4 bytes (8 hex chars)
     functionSelectors.push(
       new Method(
         methodSignature.split("(")[0],
-        methodSignature.split("(")[1].split(")")[0],
+        ABI[i].parameters,
         methodSignature,
         methodSelector
       )
@@ -228,129 +238,239 @@ export function getFunctionSelectors(): Array<Method> {
 
 function logDecodedValues(
   value: ethereum.Value,
-  methodParams: string,
-  methodName: string
-): void {
-  log.info("methodName methodParams: {}", [methodName, methodParams]);
-  let paramTypes = methodParams.split(",");
-  log.info("Decoded values: {} ", paramTypes);
+  method: Method,
+  tx: ethereum.Transaction
+): string[] {
+  log.info("methodName methodParams: {} {} ", [
+    method.methodName,
+    method.parameters
+      .map<string>((param: ABIParameter) => param.name)
+      .join(","),
+  ]);
+  // log.info("value: {}", [value.displayData()]);
+  let paramTypes = method.parameters.map<string>((param) => param.type);
+  log.info(
+    `Decoded values: ${paramTypes.map<string>((param: string) => "{}")} `,
+    paramTypes
+  );
   const tuple = value.toTuple();
-  if (methodName == "finalize") {
-    let param1 = tuple[0].toBigInt(); // uint256
-    let param2 = tuple[1].toBigInt(); // uint256
-    let param3 = tuple[2].toBigIntArray(); // uint256[]
-    let param4 = tuple[3].toBytes(); // bytes32
-    let param5 = tuple[4].toAddressArray(); // address[]
-    let param6 = tuple[5].toBytes(); // bytes32
-    let param7 = tuple[6].toBigInt(); // uint64 (interpreted as BigInt in AssemblyScript)
-    let param8 = tuple[7].toBytes(); // bytes
+  let decodedValues: string[] = [];
+  let decodedParams: string[] = [];
 
-    // Log the decoded values
-    log.info("Param 1 (uint256): {}", [param1.toString()]);
-    log.info("Param 2 (uint256): {}", [param2.toString()]);
-    log.info("Param 3 (uint256[]): {}", [
-      param3.map<string>((value) => value.toString()).join(", "),
-    ]);
-    log.info("Param 4 (bytes32): {}", [param4.toHexString()]);
-    log.info("Param 5 (address[]): {}", [
-      param5.map<string>((value) => value.toHexString()).join(", "),
-    ]);
-    log.info("Param 6 (bytes32): {}", [param6.toHexString()]);
-    log.info("Param 7 (uint64): {}", [param7.toString()]);
-    log.info("Param 8 (bytes): {}", [param8.toHexString()]);
-  } else {
-    log.warning("Failed to decode transaction input", []);
-  }
-  // log.info("Tuple: {}", [tuple.toString()]);
+  log.info("Tuple: {}", [tuple.length.toString()]);
   for (let i = 0; i < tuple.length; i++) {
-    let param = tuple[i];
+    let decodeValue = tuple.at(i);
     log.info("Param type: {}", [paramTypes[i]]);
+    // let jsonObject = new TypedMap<string, Value>();
 
-    if (paramTypes[i] == "uint256") {
+    // Add key-value pairs to the JSON object
+    if (paramTypes[i] === "uint256") {
       log.info("Param {} (uint256): {}", [
-        i.toString(),
-        param.toBigInt().toString(),
+        method.parameters[i].name,
+        decodeValue.toBigInt().toString(),
       ]);
-    } else if (paramTypes[i] == "uint64") {
+      decodedValues.push(decodeValue.toBigInt().toString());
+      decodedParams.push(method.parameters[i].name);
+    } else if (paramTypes[i] === "uint64") {
       log.info("Param {} (uint64): {}", [
-        i.toString(),
-        param.toBigInt().toString(),
+        method.parameters[i].name,
+        decodeValue.toBigInt().toString(),
       ]);
-    } else if (paramTypes[i] == "int256") {
+
+      decodedValues.push(decodeValue.toBigInt().toString());
+      decodedParams.push(method.parameters[i].name);
+    } else if (paramTypes[i] === "int256") {
       log.info("Param {} (int256): {}", [
-        i.toString(),
-        param.toBigInt().toString(),
+        method.parameters[i].name,
+        decodeValue.toBigInt().toString(),
       ]);
-    } else if (paramTypes[i] == "address") {
+      decodedValues.push(decodeValue.toBigInt().toString());
+      decodedParams.push(method.parameters[i].name);
+    } else if (paramTypes[i] === "address") {
       log.info("Param {} (address): {}", [
-        i.toString(),
-        param.toAddress().toHexString(),
+        method.parameters[i].name,
+        decodeValue.toAddress().toHexString(),
       ]);
-    } else if (paramTypes[i] == "bytes32") {
+      decodedValues.push(decodeValue.toAddress().toString());
+      decodedParams.push(method.parameters[i].name);
+    } else if (paramTypes[i] === "bytes32") {
       log.info("Param {} (bytes32): {}", [
-        i.toString(),
-        param.toBytes().toHexString(),
+        method.parameters[i].name,
+        decodeValue.toBytes().toHexString(),
       ]);
-    } else if (paramTypes[i] == "bool") {
+      decodedValues.push(decodeValue.toBytes().toString());
+      decodedParams.push(method.parameters[i].name);
+    } else if (paramTypes[i] === "bool") {
       log.info("Param {} (bool): {}", [
-        i.toString(),
-        param.toBoolean().toString(),
+        method.parameters[i].name,
+        decodeValue.toBoolean().toString(),
       ]);
-    } else if (paramTypes[i] == "string") {
-      log.info("Param {} (string): {}", [i.toString(), param.toString()]);
-    } else if (paramTypes[i] == "bytes") {
+      decodedValues.push(decodeValue.toBoolean().toString());
+      decodedParams.push(method.parameters[i].name);
+    } else if (paramTypes[i] === "string") {
+      log.info("Param {} (string): {}", [
+        method.parameters[i].name,
+        decodeValue.toString(),
+      ]);
+      decodedValues.push(decodeValue.toString());
+      decodedParams.push(method.parameters[i].name);
+    } else if (paramTypes[i] === "bytes") {
       log.info("Param {} (bytes): {}", [
-        i.toString(),
-        param.toBytes().toHexString(),
+        method.parameters[i].name,
+        decodeValue.toBytes().toHexString(),
       ]);
-    } else if (paramTypes[i] == "uint256[]") {
+      decodedValues.push(decodeValue.toBytes().toString());
+      decodedParams.push(method.parameters[i].name);
+    } else if (paramTypes[i] === "uint256[]") {
       log.info("Param {} (uint256[]): {}", [
-        i.toString(),
-        param
+        method.parameters[i].name,
+        decodeValue
           .toBigIntArray()
           .map<string>((value) => value.toString())
           .join(", "),
       ]);
-    } else if (paramTypes[i] == "int256[]") {
+      decodedValues.push(
+        decodeValue
+          .toBigIntArray()
+          .map<string>((value) => value.toString())
+          .join(", ")
+      );
+      decodedParams.push(method.parameters[i].name);
+    } else if (paramTypes[i] === "int256[]") {
       log.info("Param {} (int256[]): {}", [
-        i.toString(),
-        param
+        method.parameters[i].name,
+        decodeValue
           .toBigIntArray()
           .map<string>((value) => value.toString())
           .join(", "),
       ]);
-    } else if (paramTypes[i] == "address[]") {
+      decodedValues.push(
+        decodeValue
+          .toBigIntArray()
+          .map<string>((value) => value.toString())
+          .join(", ")
+      );
+      decodedParams.push(method.parameters[i].name);
+    } else if (paramTypes[i] === "address[]") {
       log.info("Param {} (address[]): {}", [
-        i.toString(),
-        param
+        method.parameters[i].name,
+        decodeValue
           .toAddressArray()
           .map<string>((value) => value.toHexString())
           .join(", "),
       ]);
-    } else if (paramTypes[i] == "bool[]") {
+      decodedValues.push(
+        decodeValue
+          .toAddressArray()
+          .map<string>((value) => value.toHexString())
+          .join(", ")
+      );
+      decodedParams.push(method.parameters[i].name);
+    } else if (paramTypes[i] === "bool[]") {
       log.info("Param {} (bool[]): {}", [
-        i.toString(),
-        param
+        method.parameters[i].name,
+        decodeValue
           .toBooleanArray()
           .map<string>((value) => value.toString())
           .join(", "),
       ]);
-    } else if (paramTypes[i] == "bytes32[]") {
+      decodedValues.push(
+        decodeValue
+          .toBooleanArray()
+          .map<string>((value) => value.toString())
+          .join(", ")
+      );
+      decodedParams.push(method.parameters[i].name);
+    } else if (paramTypes[i] === "bytes32[]") {
       log.info("Param {} (bytes32[]): {}", [
-        i.toString(),
-        param
+        method.parameters[i].name,
+        decodeValue
           .toBytesArray()
           .map<string>((value) => value.toHexString())
           .join(", "),
       ]);
-    } else if (paramTypes[i].startsWith("tuple")) {
-      log.info("Param {} (tuple): {}", [i.toString()]);
+      decodedValues.push(
+        decodeValue
+          .toBytesArray()
+          .map<string>((value) => value.toHexString())
+          .join(", ")
+      );
+      decodedParams.push(method.parameters[i].name);
+    } else if (
+      paramTypes[i] === "tuple" &&
+      method.parameters[i].components != null
+    ) {
+      log.info("Param {} (tuple): {}", [
+        method.parameters[i].name,
+        method.parameters[i].type,
+      ]);
       // let tupleParam = param.toTuple();
       // You can recursively log tuple elements by calling this function again
-      logDecodedValues(param, extractTupleTypes(paramTypes[i]), methodName);
+      logDecodedValues(
+        decodeValue,
+        new Method(
+          method.parameters[i].name,
+          method.parameters[i].components as ABIParameter[],
+          "",
+          ""
+        ),
+        tx
+      );
     }
-    // Handle more types as needed
+    // let entity = Parameters.load(tx.hash);
+
+    // if (entity == null) {
+    //   entity = new Parameters(tx.hash);
+    // }
+    // log.info("JSON Object: {}", [stringifyMap(jsonObject)]);
+    // entity.metadata = stringifyMap(jsonObject);
+    // entity.save();
   }
+  return decodedValues;
+}
+
+function stringifyMap(map: TypedMap<string, Value>): string {
+  let result = "{";
+  let keys = map.entries;
+
+  for (let i = 0; i < keys.length; i++) {
+    let key = keys[i].key;
+    let value = stringifyValue(map.get(key) as Value);
+    result += `"${key}":${value}`;
+    log.info("Key: {} Value: {}", [key, value]);
+    if (i < keys.length - 1) {
+      result += ",";
+    }
+  }
+
+  result += "}";
+  return result;
+}
+
+function stringifyValue(value: Value): string {
+  if (value.kind == ValueKind.STRING) {
+    return `"${value.toString()}"`;
+  } else if (value.kind == ValueKind.INT) {
+    return value.toI64().toString();
+  } else if (value.kind == ValueKind.BOOL) {
+    return value.toBoolean() ? "true" : "false";
+  } else if (value.kind == ValueKind.BIGINT) {
+    return value.toBigInt().toString();
+  } else if (value.kind == ValueKind.ARRAY) {
+    let arr = value.toArray();
+    let result = "[";
+    for (let i = 0; i < arr.length; i++) {
+      result += stringifyValue(arr[i]);
+      if (i < arr.length - 1) {
+        result += ",";
+      }
+    }
+    result += "]";
+    return result;
+  } else if (value.kind == ValueKind.NULL) {
+    return "null";
+  }
+  return "null";
 }
 
 // Helper function to extract tuple types from the parameter string (e.g., tuple(uint256,address) -> uint256,address)
