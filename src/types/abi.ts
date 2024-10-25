@@ -60,7 +60,7 @@
 export class ABIParameter {
   name: string;
   type: string;
-  components: ABIParameter[] | null;
+  components: ABIParameter[] | null = null;
 
   constructor(
     name: string,

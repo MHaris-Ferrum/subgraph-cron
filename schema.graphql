@@ -186,7 +186,8 @@ type DecodedInput @entity {
   id: Bytes! # Transaction hash
   method: String! # Method name
   parameters: [String!]
-  values: [String!] # Method parameters
+  parametersTypes: [String!]
+  parametersValues: [String!] # Method parameters
 }
 
 # type Parameters @entity {
