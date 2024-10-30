@@ -35,9 +35,9 @@ export function handleAdminSet(event: AdminSetEvent): void {
   );
   entity.admin = event.params.admin;
 
-  handleBlock(event);
-  handleTransaction(event);
-  handleTransactionReceipt(event);
+  // handleBlock(event);
+  // handleTransaction(event);
+  // handleTransactionReceipt(event);
 
   entity.blockNumber = event.block.number;
   entity.blockTimestamp = event.block.timestamp;
@@ -134,9 +134,9 @@ export function handleLocalBlockCreated(event: LocalBlockCreatedEvent): void {
   entity.nonce = event.params.nonce;
   entity.timestamp = event.params.timestamp;
 
-  handleBlock(event);
-  handleTransaction(event);
-  handleTransactionReceipt(event);
+  // handleBlock(event);
+  // handleTransaction(event);
+  // handleTransactionReceipt(event);
 
   entity.blockNumber = event.block.number;
   entity.blockTimestamp = event.block.timestamp;

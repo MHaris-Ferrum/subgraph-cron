@@ -1,5 +1,5 @@
-import { newMockEvent } from "matchstick-as"
-import { ethereum, Address, BigInt, Bytes } from "@graphprotocol/graph-ts"
+import { log, newMockEvent } from "matchstick-as";
+import { ethereum, Address, BigInt, Bytes } from "@graphprotocol/graph-ts";
 import {
   AdminSet,
   FinalizedBlock,
@@ -10,19 +10,19 @@ import {
   MinedBlockCreated,
   OwnershipTransferred,
   RemoteTransactionRegistered,
-  Upgraded
-} from "../generated/QuantumPortalLedgerMgrImplUpgradeable/QuantumPortalLedgerMgrImplUpgradeable"
+  Upgraded,
+} from "../generated/QuantumPortalLedgerMgrImplUpgradeable/QuantumPortalLedgerMgrImplUpgradeable";
 
 export function createAdminSetEvent(admin: Address): AdminSet {
-  let adminSetEvent = changetype<AdminSet>(newMockEvent())
+  let adminSetEvent = changetype<AdminSet>(newMockEvent());
 
-  adminSetEvent.parameters = new Array()
+  adminSetEvent.parameters = new Array();
 
   adminSetEvent.parameters.push(
     new ethereum.EventParam("admin", ethereum.Value.fromAddress(admin))
-  )
+  );
 
-  return adminSetEvent
+  return adminSetEvent;
 }
 
 export function createFinalizedBlockEvent(
@@ -30,30 +30,30 @@ export function createFinalizedBlockEvent(
   blockNonce: BigInt,
   timestamp: BigInt
 ): FinalizedBlock {
-  let finalizedBlockEvent = changetype<FinalizedBlock>(newMockEvent())
+  let finalizedBlockEvent = changetype<FinalizedBlock>(newMockEvent());
 
-  finalizedBlockEvent.parameters = new Array()
+  finalizedBlockEvent.parameters = new Array();
 
   finalizedBlockEvent.parameters.push(
     new ethereum.EventParam(
       "remoteChainId",
       ethereum.Value.fromUnsignedBigInt(remoteChainId)
     )
-  )
+  );
   finalizedBlockEvent.parameters.push(
     new ethereum.EventParam(
       "blockNonce",
       ethereum.Value.fromUnsignedBigInt(blockNonce)
     )
-  )
+  );
   finalizedBlockEvent.parameters.push(
     new ethereum.EventParam(
       "timestamp",
       ethereum.Value.fromUnsignedBigInt(timestamp)
     )
-  )
+  );
 
-  return finalizedBlockEvent
+  return finalizedBlockEvent;
 }
 
 export function createFinalizedInvalidBlockEvent(
@@ -63,30 +63,30 @@ export function createFinalizedInvalidBlockEvent(
 ): FinalizedInvalidBlock {
   let finalizedInvalidBlockEvent = changetype<FinalizedInvalidBlock>(
     newMockEvent()
-  )
+  );
 
-  finalizedInvalidBlockEvent.parameters = new Array()
+  finalizedInvalidBlockEvent.parameters = new Array();
 
   finalizedInvalidBlockEvent.parameters.push(
     new ethereum.EventParam(
       "remoteChainId",
       ethereum.Value.fromUnsignedBigInt(remoteChainId)
     )
-  )
+  );
   finalizedInvalidBlockEvent.parameters.push(
     new ethereum.EventParam(
       "blockNonce",
       ethereum.Value.fromUnsignedBigInt(blockNonce)
     )
-  )
+  );
   finalizedInvalidBlockEvent.parameters.push(
     new ethereum.EventParam(
       "timestamp",
       ethereum.Value.fromUnsignedBigInt(timestamp)
     )
-  )
+  );
 
-  return finalizedInvalidBlockEvent
+  return finalizedInvalidBlockEvent;
 }
 
 export function createFinalizedSnapshotEvent(
@@ -95,51 +95,51 @@ export function createFinalizedSnapshotEvent(
   endBlockNonce: BigInt,
   finalizers: Array<Address>
 ): FinalizedSnapshot {
-  let finalizedSnapshotEvent = changetype<FinalizedSnapshot>(newMockEvent())
+  let finalizedSnapshotEvent = changetype<FinalizedSnapshot>(newMockEvent());
 
-  finalizedSnapshotEvent.parameters = new Array()
+  finalizedSnapshotEvent.parameters = new Array();
 
   finalizedSnapshotEvent.parameters.push(
     new ethereum.EventParam(
       "remoteChainId",
       ethereum.Value.fromUnsignedBigInt(remoteChainId)
     )
-  )
+  );
   finalizedSnapshotEvent.parameters.push(
     new ethereum.EventParam(
       "startBlockNonce",
       ethereum.Value.fromUnsignedBigInt(startBlockNonce)
     )
-  )
+  );
   finalizedSnapshotEvent.parameters.push(
     new ethereum.EventParam(
       "endBlockNonce",
       ethereum.Value.fromUnsignedBigInt(endBlockNonce)
     )
-  )
+  );
   finalizedSnapshotEvent.parameters.push(
     new ethereum.EventParam(
       "finalizers",
       ethereum.Value.fromAddressArray(finalizers)
     )
-  )
+  );
 
-  return finalizedSnapshotEvent
+  return finalizedSnapshotEvent;
 }
 
 export function createInitializedEvent(version: BigInt): Initialized {
-  let initializedEvent = changetype<Initialized>(newMockEvent())
+  let initializedEvent = changetype<Initialized>(newMockEvent());
 
-  initializedEvent.parameters = new Array()
+  initializedEvent.parameters = new Array();
 
   initializedEvent.parameters.push(
     new ethereum.EventParam(
       "version",
       ethereum.Value.fromUnsignedBigInt(version)
     )
-  )
+  );
 
-  return initializedEvent
+  return initializedEvent;
 }
 
 export function createLocalBlockCreatedEvent(
@@ -147,27 +147,27 @@ export function createLocalBlockCreatedEvent(
   nonce: BigInt,
   timestamp: BigInt
 ): LocalBlockCreated {
-  let localBlockCreatedEvent = changetype<LocalBlockCreated>(newMockEvent())
+  let localBlockCreatedEvent = changetype<LocalBlockCreated>(newMockEvent());
 
-  localBlockCreatedEvent.parameters = new Array()
+  localBlockCreatedEvent.parameters = new Array();
 
   localBlockCreatedEvent.parameters.push(
     new ethereum.EventParam(
       "remoteChainId",
       ethereum.Value.fromUnsignedBigInt(remoteChainId)
     )
-  )
+  );
   localBlockCreatedEvent.parameters.push(
     new ethereum.EventParam("nonce", ethereum.Value.fromUnsignedBigInt(nonce))
-  )
+  );
   localBlockCreatedEvent.parameters.push(
     new ethereum.EventParam(
       "timestamp",
       ethereum.Value.fromUnsignedBigInt(timestamp)
     )
-  )
+  );
 
-  return localBlockCreatedEvent
+  return localBlockCreatedEvent;
 }
 
 export function createMinedBlockCreatedEvent(
@@ -177,36 +177,36 @@ export function createMinedBlockCreatedEvent(
   totalValue: BigInt,
   blockMetadata: ethereum.Tuple
 ): MinedBlockCreated {
-  let minedBlockCreatedEvent = changetype<MinedBlockCreated>(newMockEvent())
+  let minedBlockCreatedEvent = changetype<MinedBlockCreated>(newMockEvent());
 
-  minedBlockCreatedEvent.parameters = new Array()
+  minedBlockCreatedEvent.parameters = new Array();
 
   minedBlockCreatedEvent.parameters.push(
     new ethereum.EventParam(
       "blockHash",
       ethereum.Value.fromFixedBytes(blockHash)
     )
-  )
+  );
   minedBlockCreatedEvent.parameters.push(
     new ethereum.EventParam("miner", ethereum.Value.fromAddress(miner))
-  )
+  );
   minedBlockCreatedEvent.parameters.push(
     new ethereum.EventParam("stake", ethereum.Value.fromUnsignedBigInt(stake))
-  )
+  );
   minedBlockCreatedEvent.parameters.push(
     new ethereum.EventParam(
       "totalValue",
       ethereum.Value.fromUnsignedBigInt(totalValue)
     )
-  )
+  );
   minedBlockCreatedEvent.parameters.push(
     new ethereum.EventParam(
       "blockMetadata",
       ethereum.Value.fromTuple(blockMetadata)
     )
-  )
+  );
 
-  return minedBlockCreatedEvent
+  return minedBlockCreatedEvent;
 }
 
 export function createOwnershipTransferredEvent(
@@ -215,21 +215,21 @@ export function createOwnershipTransferredEvent(
 ): OwnershipTransferred {
   let ownershipTransferredEvent = changetype<OwnershipTransferred>(
     newMockEvent()
-  )
+  );
 
-  ownershipTransferredEvent.parameters = new Array()
+  ownershipTransferredEvent.parameters = new Array();
 
   ownershipTransferredEvent.parameters.push(
     new ethereum.EventParam(
       "previousOwner",
       ethereum.Value.fromAddress(previousOwner)
     )
-  )
+  );
   ownershipTransferredEvent.parameters.push(
     new ethereum.EventParam("newOwner", ethereum.Value.fromAddress(newOwner))
-  )
+  );
 
-  return ownershipTransferredEvent
+  return ownershipTransferredEvent;
 }
 
 export function createRemoteTransactionRegisteredEvent(
@@ -244,67 +244,82 @@ export function createRemoteTransactionRegisteredEvent(
   fixedFee: BigInt
 ): RemoteTransactionRegistered {
   let remoteTransactionRegisteredEvent =
-    changetype<RemoteTransactionRegistered>(newMockEvent())
+    changetype<RemoteTransactionRegistered>(newMockEvent());
 
-  remoteTransactionRegisteredEvent.parameters = new Array()
+  remoteTransactionRegisteredEvent.parameters = new Array();
 
   remoteTransactionRegisteredEvent.parameters.push(
     new ethereum.EventParam(
       "timestamp",
       ethereum.Value.fromUnsignedBigInt(timestamp)
     )
-  )
+  );
   remoteTransactionRegisteredEvent.parameters.push(
     new ethereum.EventParam(
       "remoteContract",
       ethereum.Value.fromAddress(remoteContract)
     )
-  )
+  );
   remoteTransactionRegisteredEvent.parameters.push(
     new ethereum.EventParam(
       "sourceMsgSender",
       ethereum.Value.fromAddress(sourceMsgSender)
     )
-  )
+  );
   remoteTransactionRegisteredEvent.parameters.push(
     new ethereum.EventParam(
       "sourceBeneficiary",
       ethereum.Value.fromAddress(sourceBeneficiary)
     )
-  )
+  );
   remoteTransactionRegisteredEvent.parameters.push(
     new ethereum.EventParam("token", ethereum.Value.fromAddress(token))
-  )
+  );
   remoteTransactionRegisteredEvent.parameters.push(
     new ethereum.EventParam("amount", ethereum.Value.fromUnsignedBigInt(amount))
-  )
+  );
   remoteTransactionRegisteredEvent.parameters.push(
     new ethereum.EventParam("method", ethereum.Value.fromBytes(method))
-  )
+  );
   remoteTransactionRegisteredEvent.parameters.push(
     new ethereum.EventParam("gas", ethereum.Value.fromUnsignedBigInt(gas))
-  )
+  );
   remoteTransactionRegisteredEvent.parameters.push(
     new ethereum.EventParam(
       "fixedFee",
       ethereum.Value.fromUnsignedBigInt(fixedFee)
     )
-  )
+  );
 
-  return remoteTransactionRegisteredEvent
+  return remoteTransactionRegisteredEvent;
 }
 
 export function createUpgradedEvent(implementation: Address): Upgraded {
-  let upgradedEvent = changetype<Upgraded>(newMockEvent())
+  let upgradedEvent = changetype<Upgraded>(newMockEvent());
 
-  upgradedEvent.parameters = new Array()
+  upgradedEvent.parameters = new Array();
 
   upgradedEvent.parameters.push(
     new ethereum.EventParam(
       "implementation",
       ethereum.Value.fromAddress(implementation)
     )
-  )
+  );
 
-  return upgradedEvent
+  return upgradedEvent;
+}
+
+export function decodeMineBlockTransactionInput(
+  input: string
+): ethereum.Value | null {
+  let mineBlockTransactionInput = input;
+  let decoded = ethereum.decode(
+    "(uint64,uint64,(uint64,address,address,address,address,uint256,bytes[],uint256,uint256)[],bytes32,uint64,bytes)",
+    Bytes.fromHexString(mineBlockTransactionInput)
+  );
+  if (decoded !== null) {
+    // const tuple = decoded.toTuple();
+    return decoded;
+  }
+  return null;
 }

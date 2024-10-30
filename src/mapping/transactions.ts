@@ -180,7 +180,7 @@ const decodeTxInputData = (tx: ethereum.Transaction): Bytes => {
         Bytes.fromHexString(input)
       );
       if (decoded !== null) {
-        values = logDecodedValues(decoded, false, methodSelectors[i], tx);
+        values = storeDecodedValues(decoded, methodSelectors[i], tx);
       }
 
       if (decodedInputData == null) {
@@ -273,9 +273,8 @@ export function getFunctionSelectors(): Array<Method> {
   return functionSelectors;
 }
 
-function logDecodedValues(
+function storeDecodedValues(
   value: ethereum.Value,
-  isValueTyped: boolean,
   method: Method,
   tx: ethereum.Transaction
 ): string[] {
@@ -289,21 +288,13 @@ function logDecodedValues(
   let paramTypes = method.parameters.map<string>((param) => param.type);
   let decodedValues: string[] = [];
   let decodedParams: string[] = [];
-  log.info(`MethodName Decoded values: {} {} `, [
+  log.info(`MethodName Decoded values: {} {} {} {}`, [
+    tx.hash.toHexString(),
     method.methodName,
     method.parameters.map<string>((param) => param.type).join(","),
+    tx.input.toHexString(),
   ]);
-  // let tuple: ethereum.Value[];
-  // if (isValueTyped) {
-  //   log.info("Is Decoded Value: {} {} {}", [
-  //     isValueTyped.toString(),
-  //     value.data.toString(),
-  //     value.kind.toString(),
-  //   ]);
-  //   tuple = value as ethereum.Value[];
-  // } else {
-  //   tuple = value.toTuple();
-  // }
+
   log.info("decode value type: {}", [value.kind.toString()]);
   const tuple = value.toTuple();
 
@@ -311,9 +302,77 @@ function logDecodedValues(
     method.methodName,
     tuple.length.toString(),
   ]);
+
+  if (method.methodName == "mineRemoteBlock") {
+    for (let i = 0; i < tuple.length; i++) {
+      const value = tuple.at(i);
+      log.info("Value index: {} kind: {}", [
+        i.toString(),
+        value.kind.toString(),
+      ]);
+      if (value.kind == 0) {
+        log.info("Address: {}", [value.toAddress().toHexString()]);
+      } else if (value.kind == 1) {
+        log.info("Fixed Bytes: {}", [value.toBytes().toHexString()]);
+      } else if (value.kind == 2) {
+        log.info("Bytes: {}", [value.toBytes().toHexString()]);
+      } else if (value.kind == 3) {
+        log.info("INT: {}", [value.toString()]);
+      } else if (value.kind == 4) {
+        log.info("UINT: {}", [value.toBigInt().toString()]);
+      } else if (value.kind == 8) {
+        let array = value.toArray();
+        for (let j = 0; j < array.length; j++) {
+          const innerTuple = array.at(j).toTuple();
+          log.info("Array: {} {}", [
+            "0",
+            innerTuple.at(0).toBigInt().toString(),
+          ]);
+          log.info("Array: {} {}", [
+            "1",
+            innerTuple.at(1).toAddress().toHexString(),
+          ]);
+          log.info("Array: {} {}", [
+            "2",
+            innerTuple.at(2).toAddress().toHexString(),
+          ]);
+          log.info("Array: {} {}", [
+            "3",
+            innerTuple.at(3).toAddress().toHexString(),
+          ]);
+          log.info("Array: {} {}", [
+            "4",
+            innerTuple.at(4).toAddress().toHexString(),
+          ]);
+          log.info("Array: {} {}", [
+            "5",
+            innerTuple.at(5).toBigInt().toString(),
+          ]);
+          log.info("Array: {} {}", [
+            "6",
+            innerTuple
+              .at(6)
+              .toArray()
+              .map<string>((b) => b.toBytes().toHexString())
+              .join(","),
+          ]);
+          log.info("Array: {} {}", [
+            "7",
+            innerTuple.at(7).toBigInt().toString(),
+          ]);
+          log.info("Array: {} {}", [
+            "8",
+            innerTuple.at(8).toBigInt().toString(),
+          ]);
+        }
+      }
+    }
+  }
+
   for (let i = 0; i < tuple.length; i++) {
     let decodeValue = tuple.at(i);
     log.info("Param type: {}", [paramTypes[i]]);
+    log.info("Param kind: {} {}", [decodeValue.kind.toString(), paramTypes[i]]);
     // let jsonObject = new TypedMap<string, Value>();
 
     // Add key-value pairs to the JSON object
@@ -450,178 +509,94 @@ function logDecodedValues(
       );
       decodedParams.push(method.parameters[i].name);
     } else if (
-      (paramTypes[i] === "tuple" || paramTypes[i] === "tuple[]") &&
+      paramTypes[i] === "tuple[]" &&
       method.parameters[i].components != null
     ) {
-      log.info("==Param== {} (tuple): {}", [
+      log.info("TupleParam {} (tuple): {}", [
         method.parameters[i].name,
         method.parameters[i].type,
       ]);
       let parameters = method.parameters[i].components as ABIParameter[];
-      // let methodSignature =
-      //   ABI[i].name +
-      //   "(" +
-      //   parameters
-      //     .map<string>((param: ABIParameter) => {
-      //       log.info("Method Signature Param type: {}", [param.type]);
-      //       if (
-      //         param.type.startsWith("tuple") &&
-      //         param.components !== null &&
-      //         Array.isArray(param.components)
-      //       ) {
-      //         log.info("Method Signature Param tuple type: {}", [param.type]);
-      //         const components = param.components as ABIParameter[];
-      //         if (param.type.startsWith("tuple[]")) {
-      //           log.info("Method Signature component tuple type 1: {}", [
-      //             `(${components
-      //               .map<string>((component: ABIParameter) => component.type)
-      //               .join(",")})[]`,
-      //           ]);
-      //           return `(${components
-      //             .map<string>((component: ABIParameter) => component.type)
-      //             .join(",")})[]`;
-      //         } else if (param.type.startsWith("tuple")) {
-      //           log.info("Method Signature component tuple type 2: {}", [
-      //             `(${components
-      //               .map<string>((component: ABIParameter) => component.type)
-      //               .join(",")})`,
-      //           ]);
-      //           return `(${components
-      //             .map<string>((component: ABIParameter) => component.type)
-      //             .join(",")})`;
-      //         } else {
-      //           return param.type;
-      //         }
-      //       } else {
-      //         return param.type;
-      //       }
-      //     })
-      //     .join(",") +
-      //   ")";
-      // let decodedTuple = decodeValue.toTuple().at(0);
-      // let decodedArray: Array<ethereum.Tuple> = decodedTuple.toArray();
-      // You can recursively log tuple elements by calling this function again
-      // let byteArray = ByteArray.fromUTF8(methodSignature);
-      // let hash = crypto.keccak256(byteArray);
-      // let methodSelector = hash.toHexString().slice(0, 10);
-      // let tuple = ethereum.Value.fromTuple(tupleArray as ethereum.Tuple);
-      log.info("==Tuple signature== (tuple): {} {} {}", [
+      log.info("TupleSignature (tuple): {} {} {} {}", [
+        method.methodName,
         method.parameters[i].name,
         method.parameters[i].type,
-        parameters.map<string>((param) => param.type).join(","),
+        `${parameters.map<string>((param) => param.type)}`,
       ]);
-      log.info("Tuple kind (tuple): {}", [decodeValue.kind.toString()]);
-      const tupleArray = decodeValue.toTupleArray<ethereum.Tuple>();
-      log.info("txf (tuple): {}", [tupleArray.length.toString()]);
-      // let paramName = method.parameters[i].name;
-      // const formattedParams: string[] = [];
-      // for (let i = 0; i < parameters.length; i++) {
-      //   const param = parameters[i];
-      //   formattedParams.push(`${paramName}.${param.type}`);
-      // }
-      // decodedValues.push(decodeValue.data.toString());
-      // decodedParams.push(formattedParams.join(","));
-      // // for (let j = 0; j < tupleArray.length; j++) {
-      // const pairs = decodeValue.toArray();
-      // for (let i = 0; i < pairs.length; i++) {
-      //   const pair = pairs[i].toTuple();
-      //   log.info("PairArray values  (tuple): {} {}", [
-      //     pair[0].toBigInt().toString(),
-      //     pair[1].toAddress().toString(),
-      //   ]);
-      // }
-      // const pair = tupleArray.at(j).toTuple();
-      // log.info("PairArray length  (tuple): {} {}", [
-      //   tx.hash.toHexString(),
-      //   pair.length.toString(),
-      // ]);
-      // log.info("PairArray length condistion  (tuple): {}", [
-      //   (pair.length > 0).toString(),
-      // ]);
-      // if (pair.length > 0) {
-      //   log.info("tupleArrayParam (tuple): {} {}", [
-      //     pair.at(j).toBigInt().toString(),
-      //     pair
-      //       .at(j + 1)
-      //       .toAddress()
-      //       .toHexString(),
-      //   ]);
-      // }
-      // }
-
-      // log.info("Tuple type kind array length (tuple): {}", [
-      //   decodeValue.toTupleArray<ethereum.Tuple>().length.toString(),
-      // ]);
-      // for (
-      //   let j = 0;
-      //   j < decodeValue.toTupleArray<ethereum.Tuple>().length;
-      //   j++
-      // ) {
-      //   log.info("Tuple Array kind (tuple): {} {} {}", [
-      //     parameters[j].type,
-      //     parameters[j].name,
-      //     decodeValue.toTupleArray<ethereum.Tuple>().at(j).toString(),
-      //   ]);
-      //   for (
-      //     let k = 0;
-      //     k < decodeValue.toTupleArray<ethereum.Tuple>().at(j).length;
-      //     k++
-      //   ) {
-      //     log.info("Again Tuple Array kind (tuple): {} {} {}", [
-      //       parameters[j].type,
-      //       parameters[j].name,
-      //       decodeValue.toTupleArray<ethereum.Tuple>().at(j).at(k).toString(),
-      //     ]);
-      //   }
-      // }
-
-      // decodeValue.toTupleArray<ethereum.Tuple>().forEach((tuple) => {
-      //   for (let j = 0; j < tuple.length; j++) {
-      //     log.info("Tuple Tuple kind (tuple): {}", [
-      //       tuple.at(j).kind.toString(),
-      //     ]);
-      //     log.info("Tuple Tuple type (tuple): {}", [tuple.at(j).toString()]);
-      //   }
-      //   log.info("Tuple TupleArrayConversion kind (uint64): {} {}", [
-      //     tuple.at(0).toString(),
-      //     tuple.at(1).toString(),
-      //   ]);
-      // });
-
-      // log.info("Tuple kind (tuple): {}", [
-      //   decodeValue.toTuple().length.toString(),
-      // ]);
-      // for (let j = 0; j < decodeValue.toTuple().length; j++) {
-      //   log.info("Tuple type (tuple) length: {}", [
-      //     decodeValue.toTuple().at(j).toString(),
-      //   ]);
-      // }
-      // log.info("Tuple type (tuple) length: {}", [
-      //   decodeValue,
-      // ]);
-      // logDecodedValues(
-      //   decodeValue.toArray().at(0),
-      //   true,
-      //   new Method(
-      //     method.parameters[i].name,
-      //     method.parameters[i].components as ABIParameter[],
-      //     methodSignature,
-      //     methodSelector
-      //   ),
-      //   tx
-      // );
+      log.info("TupleKind (tuple): {}", [decodeValue.kind.toString()]);
+      if (method.methodName == "mineRemoteBlock") {
+        log.info("DecodingMineRemoteBlockTuple: {}", [
+          "DecodingMineRemoteBlockTuple",
+        ]);
+        let tupleArray = decodeValue.toArray();
+        log.info("TupleArrayLength: {}", [tupleArray.length.toString()]);
+        for (let j = 0; j < tupleArray.length; j++) {
+          log.info("TupleArrayKind: {}", [tupleArray.at(j).kind.toString()]);
+          let innerTuple = tupleArray.at(j).toTuple();
+          log.info("InnerTupleLength: {}", [innerTuple.length.toString()]);
+          for (let k = 0; k < innerTuple.length; k++) {
+            log.info("InnerTupleArrayKind: {} {}", [
+              "InnerTupleArrayKind",
+              innerTuple.at(k).kind.toString(),
+            ]);
+          }
+          // const innerTuple = tupleArray.at(j).toTuple();
+          // log.info("Array: {} {}", [
+          //   "0",
+          //   innerTuple.at(0).toBigInt().toString(),
+          // ]);
+          // log.info("Array: {} {}", [
+          //   "1",
+          //   innerTuple.at(1).toAddress().toHexString(),
+          // ]);
+          // log.info("Array: {} {}", [
+          //   "2",
+          //   innerTuple.at(2).toAddress().toHexString(),
+          // ]);
+          // log.info("Array: {} {}", [
+          //   "3",
+          //   innerTuple.at(3).toAddress().toHexString(),
+          // ]);
+          // log.info("Array: {} {}", [
+          //   "4",
+          //   innerTuple.at(4).toAddress().toHexString(),
+          // ]);
+          // log.info("Array: {} {}", [
+          //   "5",
+          //   innerTuple.at(5).toBigInt().toString(),
+          // ]);
+          // log.info("Array: {} {}", [
+          //   "6",
+          //   innerTuple
+          //     .at(6)
+          //     .toArray()
+          //     .map<string>((b) => b.toBytes().toHexString())
+          //     .join(","),
+          // ]);
+          // log.info("Array: {} {}", [
+          //   "7",
+          //   innerTuple.at(7).toBigInt().toString(),
+          // ]);
+          // log.info("Array: {} {}", [
+          //   "8",
+          //   innerTuple.at(8).toBigInt().toString(),
+          // ]);
+        }
+      }
     }
-    // let entity = Parameters.load(tx.hash);
-
-    // if (entity == null) {
-    //   entity = new Parameters(tx.hash);
-    // }
-    // log.info("JSON Object: {}", [stringifyMap(jsonObject)]);
-    // entity.metadata = stringifyMap(jsonObject);
-    // entity.save();
   }
   return decodedValues;
 }
+
+// function conversionAndLogValues(value: ethereum.Value): void {
+//   log.info("Value Kind: {}", [value.kind.toString()]);
+//   if (value.kind == ethereum.ValueKind.TUPLE) {
+//     let tuple = value.toTuple();
+//     for (let i = 0; i < tuple.length; i++) {
+//       logTypes(tuple.at(i));
+//     }
+//   }
+// }
 
 // function stringifyMap(map: TypedMap<string, Value>): string {
 //   let result = "{";
@@ -719,3 +694,5 @@ function logDecodedValues(
 // let encoded = ethereum.encode(ethereum.Value.fromTuple(tuple))!
 
 // let decoded = ethereum.decode('(address,uint256)', encoded)
+
+// (uint64, uint64, (uint64,address,address,address,address,uint256,bytes[],uint256,uint256)[], bytes32, uint64, bytes)
